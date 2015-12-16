@@ -5,6 +5,6 @@ Version: 1.0
 Date: 2015-12-16
 Author: Nikolai Sintikov
 Maintainer: Who to complain to <yourfault@somewhere.net>
-Description: This package allow to parse XES file and run simple filtering operations
-License: What license is it under?
+Description: This package allow to parse XES file and run simple filtering operations.
+License: MIT + file LICENSE
 Depends: rJava (>= 0.9-6)
