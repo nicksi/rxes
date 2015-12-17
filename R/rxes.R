@@ -49,6 +49,10 @@ xes.getTraceDurations <- function(xesTools) {
     data.frame(trace = traces, duration = durations)
 }
 
+#' Return list of all traces with attributes
+#'
+#' @param xesTools reference to XEStools class object created via \code{\link{xes.init}}
+#' @return data.frame with traces
 xes.getFullTraceList <- function(xesTools) {
     #java.util.List ru.ramax.processmining.XEStools.getFullTraceList(java.util.Map)
     #java.util.HashMap com.google.common.collect.Maps.newHashMap()
@@ -72,5 +76,5 @@ xes.getFullTraceList <- function(xesTools) {
         ldt <- .jcall(item, "Ljava/time/ZonedDateTime;", "getEndTime");
         .jcall(ldt, "S", "format", df)});
     endTime <- ymd_hms(ts)
-    data.frame(trace = name, duration = duration, eventCOunt = eventCount, resource = resource, role = role, eventRepetitions = eventRepetitions, startTime = startTime, endTime = endTime)
+    data.frame(trace = name, duration = duration, eventCount = eventCount, resource = resource, role = role, eventRepetitions = eventRepetitions, startTime = startTime, endTime = endTime)
 }

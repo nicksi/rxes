@@ -28,10 +28,6 @@ public class XEStools {
     @Getter
     private XLog xlog;
 
-    // cache for traceStartTime
-    private Map<String, ZonedDateTime> traceStartTime = Maps.newHashMap();
-    // cache for traceStartTime
-    private Map<String, ZonedDateTime> traceEndTime = Maps.newHashMap();
     // cache to search for trace by concept:name
     private Map<String, Integer> name2index = Maps.newHashMap();
 
@@ -84,27 +80,19 @@ public class XEStools {
      * @param eventName name of the event to search for, null to consider all events
      * @return LocalDateTime
      */
-    public ZonedDateTime traceStartTime(@NonNull XTrace xTrace, String eventName) {
+    static public ZonedDateTime traceStartTime(@NonNull XTrace xTrace, String eventName) {
         ZonedDateTime startTime = MINTIME;
 
-        String index = getIndex(xTrace);
-        if ( eventName == null && traceStartTime.containsKey(index) ) {
-            startTime = traceStartTime.get(index);
-        }
-        else {
-            if (xTrace.size() > 0) {
-                ListIterator events = xTrace.listIterator();
-                while (events.hasNext()) {
-                    XEvent xEvent = (XEvent)events.next(); // TODO switch to minimal date time, not first
-                    if (eventName != null && !getAttribute(xEvent, "concept:name").equals(eventName)) continue;
-                    ZonedDateTime current = (ZonedDateTime) getAttribute(xEvent, "time:timestamp");
+        if (xTrace.size() > 0) {
+            ListIterator events = xTrace.listIterator();
+            while (events.hasNext()) {
+                XEvent xEvent = (XEvent)events.next(); // TODO switch to minimal date time, not first
+                if (eventName != null && !getAttribute(xEvent, "concept:name").equals(eventName)) continue;
+                ZonedDateTime current = (ZonedDateTime) getAttribute(xEvent, "time:timestamp");
 
-                    if (current != null) {
-                        if (startTime.equals(MINTIME) || current.isBefore(startTime)) {
-                            startTime = current;
-                            if (eventName == null)
-                                traceStartTime.put(index, startTime);
-                        }
+                if (current != null) {
+                    if (startTime.equals(MINTIME) || current.isBefore(startTime)) {
+                        startTime = current;
                     }
                 }
             }
@@ -118,7 +106,7 @@ public class XEStools {
      * @param xTrace
      * @return
      */
-    public ZonedDateTime traceStartTime(@NonNull XTrace xTrace) {
+    static public ZonedDateTime traceStartTime(@NonNull XTrace xTrace) {
         return traceStartTime(xTrace, null);
     }
 
@@ -162,27 +150,19 @@ public class XEStools {
      * @param eventName name of the event to search for, null to consider all events
      * @return
      */
-    public ZonedDateTime traceEndTime(@NonNull XTrace xTrace, String eventName) {
+    static public ZonedDateTime traceEndTime(@NonNull XTrace xTrace, String eventName) {
         ZonedDateTime endTime = MAXTIME;
 
-        String index = getIndex(xTrace);
-        if ( eventName == null && traceEndTime.containsKey(index) ) {
-            endTime = traceEndTime.get(index);
-        }
-        else {
-            if (xTrace.size() > 0) {
-                ListIterator events = xTrace.listIterator();
-                while (events.hasNext()) {
-                    XEvent xEvent = (XEvent)events.next(); // TODO switch to minimal date time, not first
-                    if (eventName != null && !getAttribute(xEvent, "concept:name").equals(eventName)) continue;
-                    ZonedDateTime current = (ZonedDateTime) getAttribute(xEvent, "time:timestamp");
+        if (xTrace.size() > 0) {
+            ListIterator events = xTrace.listIterator();
+            while (events.hasNext()) {
+                XEvent xEvent = (XEvent)events.next(); // TODO switch to minimal date time, not first
+                if (eventName != null && !getAttribute(xEvent, "concept:name").equals(eventName)) continue;
+                ZonedDateTime current = (ZonedDateTime) getAttribute(xEvent, "time:timestamp");
 
-                    if (current != null) {
-                        if (endTime.equals(MAXTIME) || current.isAfter(endTime)) {
-                            endTime = current;
-                            if (eventName == null)
-                                traceEndTime.put(index, endTime);
-                        }
+                if (current != null) {
+                    if (endTime.equals(MAXTIME) || current.isAfter(endTime)) {
+                        endTime = current;
                     }
                 }
             }
@@ -213,7 +193,7 @@ public class XEStools {
      * @param xTrace
      * @return
      */
-    public ZonedDateTime traceEndTime(@NonNull XTrace xTrace) {
+    static public ZonedDateTime traceEndTime(@NonNull XTrace xTrace) {
         return  traceEndTime(xTrace, null);
     }
 
@@ -239,7 +219,7 @@ public class XEStools {
      * @param xTrace
      * @return
      */
-    public Long getTraceDuration(@NonNull XTrace xTrace) {
+    static public Long getTraceDuration(@NonNull XTrace xTrace) {
         return getTraceDuration(xTrace, null, null);
     }
 
@@ -268,7 +248,7 @@ public class XEStools {
      * @param endEventName
      * @return
      */
-    public Long getTraceDuration(@NonNull XTrace xTrace, String startEventName, String endEventName) {
+    static public Long getTraceDuration(@NonNull XTrace xTrace, String startEventName, String endEventName) {
         Long duration = 0L;
 
         ZonedDateTime start = traceStartTime(xTrace, startEventName);
@@ -323,16 +303,7 @@ public class XEStools {
 
             }
 
-            FlatXTrace flatXTrace = new FlatXTrace();
-            flatXTrace.setConceptName((String)getAttribute(current, "concept:name"));
-            flatXTrace.setDuration(getTraceDuration(current));
-            flatXTrace.setStartTime(traceStartTime(current));
-            flatXTrace.setEndTime(traceEndTime(current));
-            flatXTrace.setEventCount(current.size());
-            flatXTrace.setOrgResource(getTraceResource(current, "org:resource", null));
-            flatXTrace.setOrgRole(getTraceResource(current, "org:role", null));
-            flatXTrace.setEventRepetitions(0);
-
+            FlatXTrace flatXTrace = new FlatXTrace(current);
             traces.add(flatXTrace);
 
         }
@@ -347,7 +318,7 @@ public class XEStools {
      * @param eventName event name to check
      * @return org:resource value
      */
-    public String getTraceResource(XTrace xTrace, String attribute, String eventName) {
+    static public String getTraceResource(XTrace xTrace, String attribute, String eventName) {
         String resource = "NA";
 
         Iterator eventIterator = xTrace.iterator();
@@ -410,16 +381,19 @@ public class XEStools {
         return xTrace;
     }
 
-    /* Private functions */
-
     /***
-     * Clear all cache maps
+     * Get object index
+     * @param object
+     * @return
      */
-    private void clearCache() {
-        // clear cache
-        traceStartTime.clear();
-        traceEndTime.clear();
-        name2index.clear();
+    static public String getIndex(XAttributable object) {
+        String index = null;
+
+        if (XTrace.class.isInstance(object) || XEvent.class.isInstance(object)) {
+            index = (String)getAttribute(object, "concept:name");
+        }
+
+        return index;
     }
 
     /***
@@ -428,7 +402,7 @@ public class XEStools {
      * @param name
      * @return
      */
-    private Object getAttribute(XAttributable object, String name) {
+    static public Object getAttribute(XAttributable object, String name) {
         Object value = null;
 
         if (object.hasAttributes()) {
@@ -452,18 +426,16 @@ public class XEStools {
         return value;
     }
 
+    /* Private functions */
+
     /***
-     * Get object index
-     * @param object
-     * @return
+     * Clear all cache maps
      */
-    private String getIndex(XAttributable object) {
-        String index = null;
-
-        if (XTrace.class.isInstance(object) || XEvent.class.isInstance(object)) {
-             index = (String)getAttribute(object, "concept:name");
-        }
-
-        return index;
+    private void clearCache() {
+        // clear cache
+        name2index.clear();
     }
+
+
+
 }
