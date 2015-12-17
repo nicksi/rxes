@@ -46,5 +46,31 @@ xes.getTraceDurations <- function(xesTools) {
     values <- .jcall(res, "Ljava/util/Collection;", "values")
     valuesA <- .jcall(values, "[Ljava/lang/Object;", "toArray")
     durations <- sapply(valuesA, function(item) {  .jcall(item, "J", "longValue") })
-    df <- data.frame(trace = traces, duration = durations)
+    data.frame(trace = traces, duration = durations)
+}
+
+xes.getFullTraceList <- function(xesTools) {
+    #java.util.List ru.ramax.processmining.XEStools.getFullTraceList(java.util.Map)
+    #java.util.HashMap com.google.common.collect.Maps.newHashMap()
+    emptyMap <- .jnew("java.util.HashMap")
+    res <- .jcall(xesTools, "Ljava/util/List;", "getFullTraceList", .jcast(emptyMap, "java/util/Map"), use.true.class = T)
+    # we will create data frame with following columns: name, duration, startTime, endTime, eventCount, resource, role, eventRepetition
+    valuesA <- res$toArray()
+    name <- sapply(valuesA, function(item) { .jcall(item, "S", "getConceptName") })
+    duration <- sapply(valuesA, function(item) { .jcall(item, "J", "getDuration")})
+    eventCount <- sapply(valuesA, function(item) { .jcall(item, "I", "getEventCount")})
+    resource <- sapply(valuesA, function(item) { .jcall(item, "S", "getOrgResource")})
+    role <- sapply(valuesA, function(item) { .jcall(item, "S", "getOrgRole")})
+    eventRepetitions <- sapply(valuesA, function(item) { .jcall(item, "I", "getEventRepetitions")})
+    df <- J("java.time.format.DateTimeFormatter")$ofPattern("yyyy-MM-dd hh:mm:ss.z")
+    ts <- sapply(valuesA, function(item) {
+       ldt <- .jcall(item, "Ljava/time/ZonedDateTime;", "getStartTime");
+       .jcall(ldt, "S", "format", df)});
+    startTime <- ymd_hms(ts)
+
+    ts <- sapply(valuesA, function(item) {
+        ldt <- .jcall(item, "Ljava/time/ZonedDateTime;", "getEndTime");
+        .jcall(ldt, "S", "format", df)});
+    endTime <- ymd_hms(ts)
+    data.frame(trace = name, duration = duration, eventCOunt = eventCount, resource = resource, role = role, eventRepetitions = eventRepetitions, startTime = startTime, endTime = endTime)
 }

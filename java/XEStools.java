@@ -11,9 +11,7 @@ import org.deckfour.xes.model.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -24,13 +22,16 @@ import java.util.Map;
  */
 public class XEStools {
 
+    static private final ZonedDateTime MINTIME = ZonedDateTime.of(LocalDateTime.MIN, ZoneId.systemDefault());
+    static private final ZonedDateTime MAXTIME = ZonedDateTime.of(LocalDateTime.MAX, ZoneId.systemDefault());
+
     @Getter
     private XLog xlog;
 
     // cache for traceStartTime
-    private Map<String, LocalDateTime> traceStartTime = Maps.newHashMap();
+    private Map<String, ZonedDateTime> traceStartTime = Maps.newHashMap();
     // cache for traceStartTime
-    private Map<String, LocalDateTime> traceEndTime = Maps.newHashMap();
+    private Map<String, ZonedDateTime> traceEndTime = Maps.newHashMap();
     // cache to search for trace by concept:name
     private Map<String, Integer> name2index = Maps.newHashMap();
 
@@ -83,8 +84,8 @@ public class XEStools {
      * @param eventName name of the event to search for, null to consider all events
      * @return LocalDateTime
      */
-    public LocalDateTime traceStartTime(@NonNull XTrace xTrace, String eventName) {
-        LocalDateTime startTime = LocalDateTime.MIN;
+    public ZonedDateTime traceStartTime(@NonNull XTrace xTrace, String eventName) {
+        ZonedDateTime startTime = MINTIME;
 
         String index = getIndex(xTrace);
         if ( eventName == null && traceStartTime.containsKey(index) ) {
@@ -96,10 +97,10 @@ public class XEStools {
                 while (events.hasNext()) {
                     XEvent xEvent = (XEvent)events.next(); // TODO switch to minimal date time, not first
                     if (eventName != null && !getAttribute(xEvent, "concept:name").equals(eventName)) continue;
-                    LocalDateTime current = (LocalDateTime)getAttribute(xEvent, "time:timestamp");
+                    ZonedDateTime current = (ZonedDateTime) getAttribute(xEvent, "time:timestamp");
 
                     if (current != null) {
-                        if (startTime.equals(LocalDateTime.MIN) || current.isBefore(startTime)) {
+                        if (startTime.equals(MINTIME) || current.isBefore(startTime)) {
                             startTime = current;
                             if (eventName == null)
                                 traceStartTime.put(index, startTime);
@@ -117,7 +118,7 @@ public class XEStools {
      * @param xTrace
      * @return
      */
-    public LocalDateTime traceStartTime(@NonNull XTrace xTrace) {
+    public ZonedDateTime traceStartTime(@NonNull XTrace xTrace) {
         return traceStartTime(xTrace, null);
     }
 
@@ -126,8 +127,8 @@ public class XEStools {
      * @param index Concept name to find
      * @return
      */
-    public LocalDateTime traceStartTime(@NonNull String index) {
-        LocalDateTime startTime = LocalDateTime.MIN;
+    public ZonedDateTime traceStartTime(@NonNull String index) {
+        ZonedDateTime startTime = MINTIME;
 
         XTrace xTrace = getXTrace(index);
         if (xTrace != null)
@@ -143,8 +144,8 @@ public class XEStools {
      * @param index Concept name to find
      * @return
      */
-    public LocalDateTime traceStartTime(@NonNull String index, String eventName) {
-        LocalDateTime startTime = LocalDateTime.MAX;
+    public ZonedDateTime traceStartTime(@NonNull String index, String eventName) {
+        ZonedDateTime startTime = MINTIME;
 
         XTrace xTrace = getXTrace(index);
         if (xTrace != null)
@@ -161,8 +162,8 @@ public class XEStools {
      * @param eventName name of the event to search for, null to consider all events
      * @return
      */
-    public LocalDateTime traceEndTime(@NonNull XTrace xTrace, String eventName) {
-        LocalDateTime endTime = LocalDateTime.MAX;
+    public ZonedDateTime traceEndTime(@NonNull XTrace xTrace, String eventName) {
+        ZonedDateTime endTime = MAXTIME;
 
         String index = getIndex(xTrace);
         if ( eventName == null && traceEndTime.containsKey(index) ) {
@@ -174,10 +175,10 @@ public class XEStools {
                 while (events.hasNext()) {
                     XEvent xEvent = (XEvent)events.next(); // TODO switch to minimal date time, not first
                     if (eventName != null && !getAttribute(xEvent, "concept:name").equals(eventName)) continue;
-                    LocalDateTime current = (LocalDateTime)getAttribute(xEvent, "time:timestamp");
+                    ZonedDateTime current = (ZonedDateTime) getAttribute(xEvent, "time:timestamp");
 
                     if (current != null) {
-                        if (endTime.equals(LocalDateTime.MAX) || current.isAfter(endTime)) {
+                        if (endTime.equals(MAXTIME) || current.isAfter(endTime)) {
                             endTime = current;
                             if (eventName == null)
                                 traceEndTime.put(index, endTime);
@@ -195,8 +196,8 @@ public class XEStools {
      * @param index Concept name to find
      * @return
      */
-    public LocalDateTime traceEndTime(@NonNull String index) {
-        LocalDateTime endTime = LocalDateTime.MAX;
+    public ZonedDateTime traceEndTime(@NonNull String index) {
+        ZonedDateTime endTime = MAXTIME;
 
         XTrace xTrace = getXTrace(index);
         if (xTrace != null)
@@ -212,7 +213,7 @@ public class XEStools {
      * @param xTrace
      * @return
      */
-    public LocalDateTime traceEndTime(@NonNull XTrace xTrace) {
+    public ZonedDateTime traceEndTime(@NonNull XTrace xTrace) {
         return  traceEndTime(xTrace, null);
     }
 
@@ -221,8 +222,8 @@ public class XEStools {
      * @param index Concept name to find
      * @return
      */
-    public LocalDateTime traceEndTime(@NonNull String index, String eventName) {
-        LocalDateTime endTime = LocalDateTime.MAX;
+    public ZonedDateTime traceEndTime(@NonNull String index, String eventName) {
+        ZonedDateTime endTime = MAXTIME;
 
         XTrace xTrace = getXTrace(index);
         if (xTrace != null)
@@ -270,9 +271,9 @@ public class XEStools {
     public Long getTraceDuration(@NonNull XTrace xTrace, String startEventName, String endEventName) {
         Long duration = 0L;
 
-        LocalDateTime start = traceStartTime(xTrace, startEventName);
-        LocalDateTime end = traceEndTime(xTrace, endEventName);
-        if (start.isAfter(LocalDateTime.MIN) && end.isBefore(LocalDateTime.MAX) && end.isAfter(start)) {
+        ZonedDateTime start = traceStartTime(xTrace, startEventName);
+        ZonedDateTime end = traceEndTime(xTrace, endEventName);
+        if (start.isAfter(MINTIME) && end.isBefore(MAXTIME) && end.isAfter(start)) {
             duration = Duration.between(start, end).toMillis()/1000;
         }
 
@@ -330,7 +331,7 @@ public class XEStools {
             flatXTrace.setEventCount(current.size());
             flatXTrace.setOrgResource(getTraceResource(current, "org:resource", null));
             flatXTrace.setOrgRole(getTraceResource(current, "org:role", null));
-            flatXTrace.setEventRepetions(0);
+            flatXTrace.setEventRepetitions(0);
 
             traces.add(flatXTrace);
 
@@ -440,7 +441,8 @@ public class XEStools {
                         break;
                     }
                     else if (XAttributeTimestamp.class.isInstance(attribute)) {
-                        value = LocalDateTime.ofEpochSecond(((XAttributeTimestamp) attribute).getValueMillis() / 1000, 0, ZoneOffset.ofHours(0));
+                        long millis = ((XAttributeTimestamp) attribute).getValueMillis();
+                        value = ZonedDateTime.ofInstant(Instant.ofEpochSecond(millis / 1000), ZoneId.of("UTC"));
                         break;
                     }
                 }
