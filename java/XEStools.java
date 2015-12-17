@@ -1,19 +1,21 @@
 package ru.ramax.processmining;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.sun.org.apache.xpath.internal.objects.XObject;
 import lombok.Getter;
 import lombok.NonNull;
 import org.deckfour.xes.factory.XFactoryNaiveImpl;
 import org.deckfour.xes.in.XesXmlGZIPParser;
 import org.deckfour.xes.model.*;
-import org.deckfour.xes.model.buffered.XTraceIterator;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Iterator;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
@@ -47,6 +49,7 @@ public class XEStools {
             if (parser.canParse(file)) {
                 InputStream inputStream = new FileInputStream(file);
                 this.xlog = parser.parse(inputStream).get(0);
+                return true;
             }
         }
         catch (Exception e) {
@@ -64,6 +67,15 @@ public class XEStools {
         this.xlog = xLog;
         clearCache();
     }
+
+    /***
+     * Return number of traces in log
+     * @return
+     */
+    public int getXLogSize() {
+        return xlog.size();
+    }
+
 
     /***
      * Find the start timestamp of the trace
@@ -293,10 +305,68 @@ public class XEStools {
         return getTraceDurations(null, null);
     }
 
-//    public Map<String, Long> getTraceDurationsWithResource(String filter) {
-//
-//    }
-//
+    /***
+     * Returns the list of flat records filtered by filter providers
+     * @param filter Map of filters as attribute name = allowed value. Value сan be regex
+     * @return
+     */
+    public List<FlatXTrace> getFullTraceList(Map<String, String> filter) {
+        List<FlatXTrace> traces = Lists.newArrayList();
+
+        Iterator traceIterator = xlog.iterator();
+        while(traceIterator.hasNext()) {
+            XTrace current = (XTrace) traceIterator.next();
+
+            // TODO apply filter if any
+            if (filter != null && filter.size() > 0) {
+
+            }
+
+            FlatXTrace flatXTrace = new FlatXTrace();
+            flatXTrace.setConceptName((String)getAttribute(current, "concept:name"));
+            flatXTrace.setDuration(getTraceDuration(current));
+            flatXTrace.setStartTime(traceStartTime(current));
+            flatXTrace.setEndTime(traceEndTime(current));
+            flatXTrace.setEventCount(current.size());
+            flatXTrace.setOrgResource(getTraceResource(current, "org:resource", null));
+            flatXTrace.setOrgRole(getTraceResource(current, "org:role", null));
+            flatXTrace.setEventRepetions(0);
+
+            traces.add(flatXTrace);
+
+        }
+
+        return traces;
+    }
+
+    /***
+     * Return event attribuite for trace. "NA" if no org:resource attributes in any event, "MULTI" if multiple resources
+     * @param xTrace trace to look into
+     * @param attribute name attribute to receive
+     * @param eventName event name to check
+     * @return org:resource value
+     */
+    public String getTraceResource(XTrace xTrace, String attribute, String eventName) {
+        String resource = "NA";
+
+        Iterator eventIterator = xTrace.iterator();
+        while (eventIterator.hasNext()) {
+            XEvent xEvent = (XEvent) eventIterator.next();
+            if ( eventName != null && !getAttribute(xEvent, "concept:name").equals(eventIterator)) continue;
+
+            String current = (String)getAttribute(xEvent, attribute);
+            if ( current == null ) continue;
+            else if ( resource.equals("NA") && !current.equals(resource)) resource = current;
+            else if ( !current.equals(resource) ) {
+                resource = "MULTI";
+                break;
+            }
+
+        }
+
+        return resource;
+    }
+
 //    public Map<String, Long> getTraceDurationsWithResource(String filter) {
 //
 //    }
