@@ -2,8 +2,12 @@ package ru.ramax.processmining;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multiset;
 import lombok.Getter;
 import lombok.NonNull;
+import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
+import org.deckfour.xes.extension.std.XLifecycleExtension;
+import org.deckfour.xes.extension.std.XTimeExtension;
 import org.deckfour.xes.factory.XFactoryNaiveImpl;
 import org.deckfour.xes.in.XesXmlGZIPParser;
 import org.deckfour.xes.model.*;
@@ -11,14 +15,18 @@ import org.deckfour.xes.model.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.time.*;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 
 /**
- * Created by nsitnikov on 16/12/15.
+ * Set of methods to work with XES logs
+ * Created by Nikolai Sitnikov on 16/12/15.
  */
 public class XEStools {
 
@@ -58,7 +66,7 @@ public class XEStools {
 
     /***
      * Select log to work with and clear cache
-     * @param xLog
+     * @param xLog - new XLog
      */
     public void setXLog(@NonNull XLog xLog) {
         this.xlog = xLog;
@@ -67,7 +75,7 @@ public class XEStools {
 
     /***
      * Return number of traces in log
-     * @return
+     * @return - number of traces. 0 if none
      */
     public int getXLogSize() {
         return xlog.size();
@@ -76,19 +84,17 @@ public class XEStools {
 
     /***
      * Find the start timestamp of the trace
-     * @param xTrace
+     * @param xTrace XTrace object to process
      * @param eventName name of the event to search for, null to consider all events
-     * @return LocalDateTime
+     * @return ZonedDateTime
      */
     static public ZonedDateTime traceStartTime(@NonNull XTrace xTrace, String eventName) {
         ZonedDateTime startTime = MINTIME;
 
         if (xTrace.size() > 0) {
-            ListIterator events = xTrace.listIterator();
-            while (events.hasNext()) {
-                XEvent xEvent = (XEvent)events.next(); // TODO switch to minimal date time, not first
+            for(XEvent xEvent: xTrace) {
                 if (eventName != null && !getAttribute(xEvent, "concept:name").equals(eventName)) continue;
-                ZonedDateTime current = (ZonedDateTime) getAttribute(xEvent, "time:timestamp");
+                ZonedDateTime current = getTimeStamp(xEvent);
 
                 if (current != null) {
                     if (startTime.equals(MINTIME) || current.isBefore(startTime)) {
@@ -103,8 +109,8 @@ public class XEStools {
 
     /***
      * Find startTime of the earliest event
-     * @param xTrace
-     * @return
+     * @param xTrace xTrace object to process
+     * @return zoned date time
      */
     static public ZonedDateTime traceStartTime(@NonNull XTrace xTrace) {
         return traceStartTime(xTrace, null);
@@ -113,7 +119,7 @@ public class XEStools {
     /***
      * Find the start timestamp of the trace based on trace concept:name
      * @param index Concept name to find
-     * @return
+     * @return zoned date time
      */
     public ZonedDateTime traceStartTime(@NonNull String index) {
         ZonedDateTime startTime = MINTIME;
@@ -130,7 +136,8 @@ public class XEStools {
     /***
      * Find the first timestamp of the trace based on trace concept:name
      * @param index Concept name to find
-     * @return
+     * @param eventName name of Event to look for or null
+     * @return zoned date time
      */
     public ZonedDateTime traceStartTime(@NonNull String index, String eventName) {
         ZonedDateTime startTime = MINTIME;
@@ -146,19 +153,17 @@ public class XEStools {
 
     /***
      * Find the last timestamp of the trace based on trace concept:name
-     * @param xTrace
+     * @param xTrace xTrace to process
      * @param eventName name of the event to search for, null to consider all events
-     * @return
+     * @return zoned date time
      */
     static public ZonedDateTime traceEndTime(@NonNull XTrace xTrace, String eventName) {
         ZonedDateTime endTime = MAXTIME;
 
         if (xTrace.size() > 0) {
-            ListIterator events = xTrace.listIterator();
-            while (events.hasNext()) {
-                XEvent xEvent = (XEvent)events.next(); // TODO switch to minimal date time, not first
+            for(XEvent xEvent: xTrace) {
                 if (eventName != null && !getAttribute(xEvent, "concept:name").equals(eventName)) continue;
-                ZonedDateTime current = (ZonedDateTime) getAttribute(xEvent, "time:timestamp");
+                ZonedDateTime current = getTimeStamp(xEvent);
 
                 if (current != null) {
                     if (endTime.equals(MAXTIME) || current.isAfter(endTime)) {
@@ -174,7 +179,7 @@ public class XEStools {
     /***
      * Find the last timestamp of the trace based on trace concept:name
      * @param index Concept name to find
-     * @return
+     * @return zoned date time
      */
     public ZonedDateTime traceEndTime(@NonNull String index) {
         ZonedDateTime endTime = MAXTIME;
@@ -190,8 +195,8 @@ public class XEStools {
 
     /***
      * Find the last timestamp of the trace based on trace concept:name
-     * @param xTrace
-     * @return
+     * @param xTrace trace to process
+     * @return zoned date time
      */
     static public ZonedDateTime traceEndTime(@NonNull XTrace xTrace) {
         return  traceEndTime(xTrace, null);
@@ -200,7 +205,8 @@ public class XEStools {
     /***
      * Find the last timestamp of the trace based on trace concept:name
      * @param index Concept name to find
-     * @return
+     * @param eventName name of the event to search for, null to consider all events
+     * @return zoned date time
      */
     public ZonedDateTime traceEndTime(@NonNull String index, String eventName) {
         ZonedDateTime endTime = MAXTIME;
@@ -216,8 +222,8 @@ public class XEStools {
 
     /***
      * Find the duration of trace
-     * @param xTrace
-     * @return
+     * @param xTrace trace to process
+     * @return trace duration
      */
     static public Long getTraceDuration(@NonNull XTrace xTrace) {
         return getTraceDuration(xTrace, null, null);
@@ -227,7 +233,7 @@ public class XEStools {
     /***
      * Find the duration of trace based on trace concept:name
      * @param index Concept name to find trace
-     * @return
+     * @return trace duration
      */
     public Long getTraceDuration(@NonNull String index) {
         Long duration = 0L;
@@ -242,11 +248,11 @@ public class XEStools {
     }
 
     /***
-     * Calculate duration based on event names limits
-     * @param xTrace
-     * @param startEventName
-     * @param endEventName
-     * @return
+     * Calculate duration of trace segment based on event names limits
+     * @param xTrace trace to process
+     * @param startEventName start event name in trace. Null to remove limit
+     * @param endEventName end event name in trace. Null to remove limit
+     * @return trace/segment duration
      */
     static public Long getTraceDuration(@NonNull XTrace xTrace, String startEventName, String endEventName) {
         Long duration = 0L;
@@ -261,17 +267,15 @@ public class XEStools {
     }
 
     /***
-     * Return map of all traces durations limited by event names
-     * @param startEvent
-     * @param endEvent
-     * @return
+     * Return map of all traces/segments durations limited by event names
+     * @param startEvent start event name in trace. Null to remove limit
+     * @param endEvent end event name in trace. Null to remove limit
+     * @return map of trace/segment durations
      */
     public Map<String, Long> getTraceDurations(String startEvent, String endEvent) {
         Map <String, Long> durations = Maps.newHashMap();
 
-        Iterator traces = xlog.iterator();
-        while(traces.hasNext()) {
-            XTrace xTrace = (XTrace)traces.next();
+        for(XTrace xTrace: xlog) {
             durations.put(getIndex(xTrace), getTraceDuration(xTrace, startEvent, endEvent));
         }
 
@@ -280,7 +284,7 @@ public class XEStools {
 
     /***
      * Return trace durations for the whole log
-     * @return
+     * @return trace duration
      */
     public Map<String, Long> getTraceDurations() {
         return getTraceDurations(null, null);
@@ -288,22 +292,18 @@ public class XEStools {
 
 
     /***
-     * Returns the list of flat records filtered by filter providers
+     * Returns the list of flat trace segments filtered by filter providers
      * @param filter Map of filters as attribute name = allowed value. Value сan be regex
-     * @return
+     * @param startName event name of segment start
+     * @param endName event name of segment end
+     * @return list of trace segments with calculated statistics
      */
     public List<FlatXTrace> getFullSubTraceList(Map<String, String> filter, String startName, String endName) {
         List<FlatXTrace> traces = Lists.newArrayList();
 
-        Iterator traceIterator = xlog.iterator();
-        while(traceIterator.hasNext()) {
-            XTrace current = (XTrace) traceIterator.next();
+        for (XTrace current: xlog) {
 
             // TODO apply filter if any
-            if (filter != null && filter.size() > 0) {
-
-            }
-
             current = trimTrace(current, startName, endName);
             if (current != null && current.size() > 0) {
                 FlatXTrace flatXTrace = new FlatXTrace(current);
@@ -315,6 +315,13 @@ public class XEStools {
         return traces;
     }
 
+    /***
+     * Copy trace segment as separate trace
+     * @param trace trace to process
+     * @param startName name of segment starting event
+     * @param endName name of segment ending event
+     * @return trace or null if start/end combination do not exist in trace
+     */
     static public XTrace trimTrace(XTrace trace, String startName, String endName) {
         XTrace trimmed = (XTrace)trace.clone();
 
@@ -323,8 +330,8 @@ public class XEStools {
         if (startTime.isAfter(MINTIME) && endTime.isBefore(MAXTIME) && !startTime.isAfter(endTime)) {
             trimmed.removeIf(
                     event -> (
-                            ((ZonedDateTime)getAttribute(event, "time:timestamp")).isBefore(startTime) ||
-                            ((ZonedDateTime)getAttribute(event, "time:timestamp")).isAfter(endTime)
+                            getTimeStamp(event).isBefore(startTime) ||
+                            getTimeStamp(event).isAfter(endTime)
                     )
             );
         }
@@ -338,20 +345,13 @@ public class XEStools {
     /***
      * Returns the list of flat records filtered by filter providers
      * @param filter Map of filters as attribute name = allowed value. Value сan be regex
-     * @return
+     * @return map of traces
      */
     public List<FlatXTrace> getFullTraceList(Map<String, String> filter) {
         List<FlatXTrace> traces = Lists.newArrayList();
 
-        Iterator traceIterator = xlog.iterator();
-        while(traceIterator.hasNext()) {
-            XTrace current = (XTrace) traceIterator.next();
-
+        for(XTrace current: xlog) {
             // TODO apply filter if any
-            if (filter != null && filter.size() > 0) {
-
-            }
-
             FlatXTrace flatXTrace = new FlatXTrace(current);
             traces.add(flatXTrace);
 
@@ -361,11 +361,11 @@ public class XEStools {
     }
 
     /***
-     * Return event attribuite for trace. "NA" if no org:resource attributes in any event, "MULTI" if multiple resources
+     * Return event attribute for trace. "NA" if no org:resource attributes in any event, "MULTI" if multiple resources
      * @param xTrace trace to look into
      * @param attribute name attribute to receive
      * @param eventName event name to check
-     * @return org:resource value
+     * @return attribute value
      */
     static public String getTraceResource(XTrace xTrace, String attribute, String eventName) {
         String resource = "NA";
@@ -399,8 +399,8 @@ public class XEStools {
 
     /***
      * Search for trace by it's concept:name
-     * @param name
-     * @return
+     * @param name name to search for
+     * @return trace of null if not found
      */
     public XTrace getXTrace(String name) {
         XTrace xTrace = null;
@@ -411,10 +411,7 @@ public class XEStools {
             if (name2index.containsKey(name))
                 xTrace = xlog.get(name2index.get(name));
             else {
-                Iterator xTraceIterator = xlog.iterator();
-                while (xTraceIterator.hasNext()) {
-                    XTrace currentTrace = (XTrace) xTraceIterator.next();
-
+                for (XTrace currentTrace: xlog) {
                     if (getIndex(currentTrace).equals(name)) {
                         // TODO not first but minimal
                         xTrace = currentTrace;
@@ -432,8 +429,8 @@ public class XEStools {
 
     /***
      * Get object index
-     * @param object
-     * @return
+     * @param object object with attributes (event or trace)
+     * @return concept:name value
      */
     static public String getIndex(XAttributable object) {
         String index = null;
@@ -447,32 +444,163 @@ public class XEStools {
 
     /***
      * Get attribute value
-     * @param object
-     * @param name
-     * @return
+     * @param object object with attributes (event or trace)
+     * @param name attribute name
+     * @return attribute value
      */
     static public Object getAttribute(XAttributable object, String name) {
         Object value = null;
 
         if (object.hasAttributes()) {
             XAttributeMap xAttributeMap = object.getAttributes();
+            XAttribute attribute = null;
 
-            for (XAttribute attribute : xAttributeMap.values()) {
-                if (attribute.getKey().equals(name)) {
-                    if (XAttributeLiteral.class.isInstance(attribute)) {
-                        value = ((XAttributeLiteral) attribute).getValue();
+            if (xAttributeMap.containsKey(name)) {
+                attribute = xAttributeMap.get(name);
+            }
+            else {
+                for (XAttribute current : xAttributeMap.values()) {
+                    if (current.getKey().equals(name)) {
+                        attribute = current;
                         break;
                     }
-                    else if (XAttributeTimestamp.class.isInstance(attribute)) {
-                        long millis = ((XAttributeTimestamp) attribute).getValueMillis();
-                        value = ZonedDateTime.ofInstant(Instant.ofEpochSecond(millis / 1000), ZoneId.of("UTC"));
-                        break;
-                    }
+                }
+            }
+
+            if (attribute != null) {
+                if (XAttributeLiteral.class.isInstance(attribute)) {
+                    value = ((XAttributeLiteral) attribute).getValue();
+                }
+                else if (XAttributeTimestamp.class.isInstance(attribute)) {
+                    value = ZonedDateTime.ofInstant(((XAttributeTimestamp) attribute).getValue().toInstant(), ZoneId.of("UTC"));
                 }
             }
         }
 
         return value;
+    }
+
+    /***
+     * Calculate average share of event duration in trace on whole log
+     * @param filter log filter to apply
+     * @param useMedian mode of calculation - mean or median (better if skewed)
+     * @return
+     */
+    public Map<String, Double> eventDurationShares(Map<String, String> filter, boolean useMedian) {
+        Map<String, Double> shares = Maps.newHashMap();
+        Map<String, DescriptiveStatistics> buffer = Maps.newHashMap();
+
+        for(XTrace xTrace: xlog) {
+            Map<String, Double> traceShares = eventSharesInTrace(xTrace);
+            for (Map.Entry<String, Double> entry: traceShares.entrySet()) {
+                DescriptiveStatistics current = buffer.getOrDefault(entry.getKey(), new DescriptiveStatistics());
+                current.addValue(entry.getValue());
+                buffer.put(
+                        entry.getKey(),
+                        current
+                );
+            }
+        }
+
+        // average share
+        for (Map.Entry<String, DescriptiveStatistics> entry: buffer.entrySet()) {
+            if (useMedian)
+                shares.put(entry.getKey(), entry.getValue().getPercentile(50));
+            else
+                shares.put(entry.getKey(), entry.getValue().getMean());
+        }
+
+        return shares;
+    }
+
+    /***
+     * Calculate event class(unique name) share of trace duration
+     * @param xTrace object to process
+     * @return map with event name and share
+     */
+    static public Map<String, Double> eventSharesInTrace(XTrace xTrace) {
+        Map<String, Double> shares = eventDurationInTrace(xTrace);
+
+        // divide by total trace duration
+        double duration = (double) getTraceDuration(xTrace);
+        shares.replaceAll((key, value) -> value / duration);
+
+        return shares;
+    }
+
+    /***
+     * Calculate event class(unique name) duration in trace
+     * @param xTrace object to process
+     * @return map with event name and duration
+     */
+    static public Map<String, Double> eventDurationInTrace(XTrace xTrace) {
+        Map<String, Double> durations = Maps.newHashMap();
+        Map<XEvent, ZonedDateTime> buffer = Maps.newHashMap();
+
+        if (xTrace.size() > 0) {
+            // let sort events first
+            Collections.sort(xTrace,
+                    (e1, e2) -> XTimeExtension.instance().extractTimestamp(e1)
+                            .compareTo(XTimeExtension.instance().extractTimestamp(e2)));
+            XEvent lastEvent = null;
+
+            for (XEvent xEvent: xTrace) {
+                if (lastEvent != null && !lastEvent.getAttributes().containsKey(XLifecycleExtension.KEY_TRANSITION) ) {
+                    buffer.put(lastEvent, getTimeStamp(xEvent));
+                }
+                if (xEvent.getAttributes().containsKey(XLifecycleExtension.KEY_TRANSITION)) {
+                    if (XLifecycleExtension.instance().extractStandardTransition(xEvent) == XLifecycleExtension.StandardModel.START)
+                    {
+                        buffer.put(xEvent, MINTIME);
+                    }
+                    else if (
+                            XLifecycleExtension.instance().extractStandardTransition(xEvent) == XLifecycleExtension.StandardModel.COMPLETE
+                            ) {
+                        // we only support START and COMPLETE transitions
+                        // go back and update open event. We assume no nested events available, nor same event can run in parallel
+                        // TODO improve code to accepts mentioned cases
+                        String name = getIndex(xEvent);
+                        for (XEvent key: buffer.keySet()) {
+                            if (getIndex(key).equals(name) && buffer.get(key).equals(MINTIME)) {
+                                buffer.put(key, getTimeStamp(xEvent));
+                                break;
+                            }
+                        }
+                    }
+
+                }
+                else {
+                    buffer.put(xEvent, MINTIME);
+                }
+
+                lastEvent = xEvent;
+            }
+
+            // calculate total event durations
+            for(Map.Entry<XEvent, ZonedDateTime> entry: buffer.entrySet()) {
+                if (getTimeStamp(entry.getKey()).isBefore(entry.getValue())) {
+                    durations.put(getIndex(entry.getKey()),
+                            durations.getOrDefault(getIndex(entry.getKey()), 0D) +
+                                    Duration.between(getTimeStamp(entry.getKey()), entry.getValue()).getSeconds());
+                }
+            }
+        }
+        return durations;
+    }
+
+    /***
+     * Get event timestamp or MIN time of not present
+     * @param xEvent to process
+     * @return Zoned Time Date
+     */
+    static public ZonedDateTime getTimeStamp(XEvent xEvent) {
+        ZonedDateTime stamp = MINTIME;
+
+        if (xEvent.getExtensions().contains(XTimeExtension.instance())) {
+            stamp = ZonedDateTime.ofInstant(XTimeExtension.instance().extractTimestamp(xEvent).toInstant(), ZoneId.of("UTC"));
+        }
+
+        return stamp;
     }
 
     /* Private functions */

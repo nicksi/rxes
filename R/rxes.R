@@ -98,3 +98,21 @@ xes.createDF <- function(res) {
     data.frame(trace = name, duration = duration, eventCount = eventCount, resource = resource, role = role, eventRepetitions = eventRepetitions, startTime = startTime, endTime = endTime)
 
 }
+
+#' Calculate average share of each event class duration of total trace duration over full log
+#'
+#' @param xesTools reference to XEStools class object created via \code{\link{xes.init}}
+#' @param median if true, use median instead of mean
+#' @return data.frame with event shares
+xes.getEventShare <- function(xesTools, median = FALSE) {
+    # java.util.Map ru.ramax.processmining.XEStools.eventDurationShares(java.util.Map,boolean)
+    emptyMap <- .jnew("java.util.HashMap")
+    res <- xesTools$eventDurationShares(emptyMap, FALSE)
+    kset <- .jcall(res, "Ljava/util/Set;", "keySet")
+    kSetA <- .jcall(kset, "[Ljava/lang/Object;", "toArray")
+    events <- sapply(kSetA, function(item) { .jstrVal(item)})
+    values <- .jcall(res, "Ljava/util/Collection;", "values")
+    valuesA <- .jcall(values, "[Ljava/lang/Object;", "toArray")
+    shares <- sapply(valuesA, function(item) {  .jcall(item, "D", "doubleValue") })
+    data.frame(event = events, share = shares)
+}
