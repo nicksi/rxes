@@ -286,6 +286,55 @@ public class XEStools {
         return getTraceDurations(null, null);
     }
 
+
+    /***
+     * Returns the list of flat records filtered by filter providers
+     * @param filter Map of filters as attribute name = allowed value. Value сan be regex
+     * @return
+     */
+    public List<FlatXTrace> getFullSubTraceList(Map<String, String> filter, String startName, String endName) {
+        List<FlatXTrace> traces = Lists.newArrayList();
+
+        Iterator traceIterator = xlog.iterator();
+        while(traceIterator.hasNext()) {
+            XTrace current = (XTrace) traceIterator.next();
+
+            // TODO apply filter if any
+            if (filter != null && filter.size() > 0) {
+
+            }
+
+            current = trimTrace(current, startName, endName);
+            if (current != null && current.size() > 0) {
+                FlatXTrace flatXTrace = new FlatXTrace(current);
+                traces.add(flatXTrace);
+            }
+
+        }
+
+        return traces;
+    }
+
+    static public XTrace trimTrace(XTrace trace, String startName, String endName) {
+        XTrace trimmed = (XTrace)trace.clone();
+
+        ZonedDateTime startTime = traceStartTime(trimmed, startName);
+        ZonedDateTime endTime = traceEndTime(trimmed, endName);
+        if (startTime.isAfter(MINTIME) && endTime.isBefore(MAXTIME) && !startTime.isAfter(endTime)) {
+            trimmed.removeIf(
+                    event -> (
+                            ((ZonedDateTime)getAttribute(event, "time:timestamp")).isBefore(startTime) ||
+                            ((ZonedDateTime)getAttribute(event, "time:timestamp")).isAfter(endTime)
+                    )
+            );
+        }
+        else {
+            trimmed = null;
+        }
+
+        return trimmed;
+    }
+
     /***
      * Returns the list of flat records filtered by filter providers
      * @param filter Map of filters as attribute name = allowed value. Value сan be regex

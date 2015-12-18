@@ -49,6 +49,18 @@ xes.getTraceDurations <- function(xesTools) {
     data.frame(trace = traces, duration = durations)
 }
 
+#' Return list of all trace segments limited by event names with attributes
+#'
+#' @param xesTools reference to XEStools class object created via \code{\link{xes.init}}
+#' @param startEvent name of first event in trace segment
+#' @param endEvent name of last event in trace segment
+#' @return data.frame with traces
+xes.getFullSubTraceList <- function(xesTools, startEvent, endEvent) {
+    emptyMap <- .jnew("java.util.HashMap")
+    res <- .jcall(xesTools, "Ljava/util/List;", "getFullSubTraceList", .jcast(emptyMap, "java/util/Map"), startEvent, endEvent, use.true.class = T)
+    xes.createDF(res)
+}
+
 #' Return list of all traces with attributes
 #'
 #' @param xesTools reference to XEStools class object created via \code{\link{xes.init}}
@@ -58,6 +70,13 @@ xes.getFullTraceList <- function(xesTools) {
     #java.util.HashMap com.google.common.collect.Maps.newHashMap()
     emptyMap <- .jnew("java.util.HashMap")
     res <- .jcall(xesTools, "Ljava/util/List;", "getFullTraceList", .jcast(emptyMap, "java/util/Map"), use.true.class = T)
+    xes.createDF(res)
+}
+
+#' Supporting function - transform map of traces into dataframe
+#' @param res javaref object containing map of flatXTraces
+#' @return data.frame with traces
+xes.createDF <- function(res) {
     # we will create data frame with following columns: name, duration, startTime, endTime, eventCount, resource, role, eventRepetition
     valuesA <- res$toArray()
     name <- sapply(valuesA, function(item) { .jcall(item, "S", "getConceptName") })
@@ -68,8 +87,8 @@ xes.getFullTraceList <- function(xesTools) {
     eventRepetitions <- sapply(valuesA, function(item) { .jcall(item, "I", "getEventRepetitions")})
     df <- J("java.time.format.DateTimeFormatter")$ofPattern("yyyy-MM-dd hh:mm:ss.z")
     ts <- sapply(valuesA, function(item) {
-       ldt <- .jcall(item, "Ljava/time/ZonedDateTime;", "getStartTime");
-       .jcall(ldt, "S", "format", df)});
+        ldt <- .jcall(item, "Ljava/time/ZonedDateTime;", "getStartTime");
+        .jcall(ldt, "S", "format", df)});
     startTime <- ymd_hms(ts)
 
     ts <- sapply(valuesA, function(item) {
@@ -77,4 +96,5 @@ xes.getFullTraceList <- function(xesTools) {
         .jcall(ldt, "S", "format", df)});
     endTime <- ymd_hms(ts)
     data.frame(trace = name, duration = duration, eventCount = eventCount, resource = resource, role = role, eventRepetitions = eventRepetitions, startTime = startTime, endTime = endTime)
+
 }
