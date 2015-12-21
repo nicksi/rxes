@@ -9,9 +9,9 @@ xes.getFullSubTraceList(xes, start_event, end_event)
 \arguments{
 \item{xes}{reference to xes class object created via \code{\link{xes.init}}}
 
-\item{startEvent}{name of first event in trace segment}
+\item{start_event}{name of first event in trace segment}
 
-\item{endEvent}{name of last event in trace segment}
+\item{end_event}{name of last event in trace segment}
 }
 \value{
 data.frame with traces

@@ -12,3 +12,5 @@ Depends:
     rJava (>= 0.9-8),
     lubridate
 RoxygenNote: 5.0.1
+URL: http://github.com/nicksi/rxes
+BugReports: http://github.com/nicksi/rxes/issues
