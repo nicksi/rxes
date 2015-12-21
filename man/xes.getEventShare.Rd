@@ -4,10 +4,10 @@
 \alias{xes.getEventShare}
 \title{Calculate average share of each event class duration of total trace duration over full log}
 \usage{
-xes.getEventShare(xesTools, median = FALSE)
+xes.getEventShare(xes, median = FALSE)
 }
 \arguments{
-\item{xesTools}{reference to XEStools class object created via \code{\link{xes.init}}}
+\item{xes}{reference to xes class object created via \code{\link{xes.init}}}
 
 \item{median}{if true, use median instead of mean}
 }

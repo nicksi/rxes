@@ -4,10 +4,10 @@
 \alias{xes.getFullTraceList}
 \title{Return list of all traces with attributes}
 \usage{
-xes.getFullTraceList(xesTools)
+xes.getFullTraceList(xes)
 }
 \arguments{
-\item{xesTools}{reference to XEStools class object created via \code{\link{xes.init}}}
+\item{xes}{reference to xes class object created via \code{\link{xes.init}}}
 }
 \value{
 data.frame with traces

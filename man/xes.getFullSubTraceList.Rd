@@ -4,10 +4,10 @@
 \alias{xes.getFullSubTraceList}
 \title{Return list of all trace segments limited by event names with attributes}
 \usage{
-xes.getFullSubTraceList(xesTools, startEvent, endEvent)
+xes.getFullSubTraceList(xes, start_event, end_event)
 }
 \arguments{
-\item{xesTools}{reference to XEStools class object created via \code{\link{xes.init}}}
+\item{xes}{reference to xes class object created via \code{\link{xes.init}}}
 
 \item{startEvent}{name of first event in trace segment}
 

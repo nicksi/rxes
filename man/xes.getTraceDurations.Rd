@@ -4,10 +4,10 @@
 \alias{xes.getTraceDurations}
 \title{Return data.frame with the trace name (concept:name) and trace duration expressed in seconds}
 \usage{
-xes.getTraceDurations(xesTools)
+xes.getTraceDurations(xes)
 }
 \arguments{
-\item{xesTools}{reference to XEStools class object created via \code{\link{xes.init}}}
+\item{xes}{reference to xes class object created via \code{\link{xes.init}}}
 }
 \value{
 data.frame with trace durations

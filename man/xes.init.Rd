@@ -7,7 +7,7 @@
 xes.init()
 }
 \value{
-reference to XESTools object
+reference to xes object
 }
 \description{
 \code{xes.init} returns pointer to the javaClass with empty log

@@ -4,10 +4,10 @@
 \alias{xes.parseLog}
 \title{Loads and parses XES log in GZIP xml format}
 \usage{
-xes.parseLog(xesTools, filename)
+xes.parseLog(xes, filename)
 }
 \arguments{
-\item{xesTools}{reference to XEStools class object created via \code{\link{xes.init}}}
+\item{xes}{reference to xes class object created via \code{\link{xes.init}}}
 
 \item{filename}{string pointing to the event log file}
 }
