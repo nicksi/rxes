@@ -22,15 +22,15 @@ xes.getFullTraceList(xes, resources = NULL, groups = NULL, roles = NULL,
 
 \item{tracestart}{range of trace start dates to pass filter}
 
+\item{traceend}{range of trace end dates to pass filter}
+
 \item{eventnames}{list of events trace should contain (at least one) to pass filter}
 
 \item{tracestartwday}{list of trace start DoW (at least one)  to pass filter}
 
-\item{tracesend}{range of trace end dates to pass filter}
+\item{traceendwday}{list of trace end DoW (at least one) to pass filter}
 
-\item{tracesendwday}{list of trace end DoW (at least one) to pass filter}
-
-\item{tracesend}{list of event transitions (at least one) to pass filter}
+\item{transitions}{list of event transitions (at least one) to pass filter}
 }
 \value{
 data.frame with traces

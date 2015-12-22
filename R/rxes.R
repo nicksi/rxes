@@ -63,14 +63,36 @@ xes.getTraceDurations <- function(xes) {
 #' @param xes reference to xes class object created via \code{\link{xes.init}}
 #' @param start_event name of first event in trace segment
 #' @param end_event name of last event in trace segment
+#' @inheritParams processfilter
 #' @return data.frame with traces
-xes.getFullSubTraceList <- function(xes, start_event, end_event) {
+xes.getFullSubTraceList <- function(xes, start_event, end_event,
+                                    resources = NULL,
+                                    groups = NULL,
+                                    roles = NULL,
+                                    eventcount = NULL,
+                                    tracestart = NULL,
+                                    traceend = NULL,
+                                    eventnames = NULL,
+                                    tracestartwday = NULL,
+                                    traceendwday = NULL,
+                                    transitions = NULL
+) {
     checkxes(xes)
-    emptymap <- .jnew("java.util.HashMap")
+    filtermap <- processfilter(resources,
+                               groups,
+                               roles,
+                               eventcount,
+                               tracestart,
+                               traceend,
+                               eventnames,
+                               tracestartwday,
+                               traceendwday,
+                               transitions
+    )
     res <- .jcall(xes,
                   "Ljava/util/List;",
                   "getFullSubTraceList",
-                  .jcast(emptymap, "java/util/Map"),
+                  .jcast(filtermap, "java/util/Map"),
                   start_event,
                   end_event,
                   use.true.class = T)
@@ -80,16 +102,7 @@ xes.getFullSubTraceList <- function(xes, start_event, end_event) {
 #' Return list of all traces with attributes
 #'
 #' @param xes reference to xes class object created via \code{\link{xes.init}}
-#' @param resources list of resources present in trace's event to pass filter. MULTI for multiple resources per trace
-#' @param groups list of resources present in trace's event to pass filter. MULTI for multiple groups per trace
-#' @param roles list of resources present in trace's event to pass filter. MULTI for multiple roles per trace
-#' @param eventcount range of events per trace to pass filter
-#' @param tracestart range of trace start dates to pass filter
-#' @param tracesend range of trace end dates to pass filter
-#' @param eventnames list of events trace should contain (at least one) to pass filter
-#' @param tracestartwday list of trace start DoW (at least one)  to pass filter
-#' @param tracesendwday list of trace end DoW (at least one) to pass filter
-#' @param tracesend list of event transitions (at least one) to pass filter
+#' @inheritParams processfilter
 #' @return data.frame with traces
 xes.getFullTraceList <- function(xes,
                                  resources = NULL,
@@ -129,12 +142,34 @@ xes.getFullTraceList <- function(xes,
 #'
 #' @param xes reference to xes class object created via \code{\link{xes.init}}
 #' @param median if true, use median instead of mean
+#' @inheritParams processfilter
 #' @return data.frame with event shares
-xes.getEventShare <- function(xes, median = FALSE) {
+xes.getEventShare <- function(xes, median = FALSE,
+                              resources = NULL,
+                              groups = NULL,
+                              roles = NULL,
+                              eventcount = NULL,
+                              tracestart = NULL,
+                              traceend = NULL,
+                              eventnames = NULL,
+                              tracestartwday = NULL,
+                              traceendwday = NULL,
+                              transitions = NULL
+) {
     checkxes(xes)
+    filtermap <- processfilter(resources,
+                               groups,
+                               roles,
+                               eventcount,
+                               tracestart,
+                               traceend,
+                               eventnames,
+                               tracestartwday,
+                               traceendwday,
+                               transitions
+    )
     # java.util.Map ru.ramax.processmining.xes.eventDurationShares(java.util.Map,boolean)
-    emptymap <- .jnew("java.util.HashMap")
-    res <- xes$eventDurationShares(emptymap, FALSE)
+    res <- xes$eventDurationShares(filtermap, FALSE)
     kset <- .jcall(res, "Ljava/util/Set;", "keySet")
     kseta <- .jcall(kset, "[Ljava/lang/Object;", "toArray")
     events <- sapply(kseta, function(item) {
@@ -150,13 +185,39 @@ xes.getEventShare <- function(xes, median = FALSE) {
     data.frame(event = events, share = shares)
 }
 
-xes.getWorkload <- function(xes, filter = NULL) {
-    # parameters handling
+#' Calculate hourly workload - number of seconds spend each our by resource
+#' doing events from event log
+#'
+#' @param xes reference to xes class object created via \code{\link{xes.init}}
+#' @inheritParams processfilter
+#' @return data.frame with workloads
+xes.getWorkload <- function(xes,
+                            resources = NULL,
+                            groups = NULL,
+                            roles = NULL,
+                            eventcount = NULL,
+                            tracestart = NULL,
+                            traceend = NULL,
+                            eventnames = NULL,
+                            tracestartwday = NULL,
+                            traceendwday = NULL,
+                            transitions = NULL
+    ) {
     checkxes(xes)
+    filtermap <- processfilter(resources,
+                               groups,
+                           roles,
+                           eventcount,
+                           tracestart,
+                           traceend,
+                           eventnames,
+                               tracestartwday,
+                               traceendwday,
+                               transitions
+    )
 
     df <- J("java.time.format.DateTimeFormatter")$ofPattern("yyyy-MM-dd hh:mm:ss.z")
-    emptymap <- .jnew("java.util.HashMap")
-    res <- xes$calculateResourceWorkload(emptymap)
+    res <- xes$calculateResourceWorkload(filtermap)
     res_array <- .jcall(res, "[Ljava/lang/Object;", "toArray", use.true.class = T)
     resource <- sapply(res_array, function(item) {
             .jcall(item, "S", "getResource")

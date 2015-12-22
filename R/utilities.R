@@ -61,7 +61,19 @@ createdf <- function(res) {
         end_time = end_time)
 
 }
-
+#' Create filter for xestool calls based on provided parameters
+#' @param resources list of resources present in trace's event to pass filter. MULTI for multiple resources per trace
+#' @param groups list of resources present in trace's event to pass filter. MULTI for multiple groups per trace
+#' @param roles list of resources present in trace's event to pass filter. MULTI for multiple roles per trace
+#' @param eventcount range of events per trace to pass filter
+#' @param tracestart range of trace start dates to pass filter
+#' @param traceend range of trace end dates to pass filter
+#' @param eventnames list of events trace should contain (at least one) to pass filter
+#' @param tracestartwday list of trace start DoW (at least one)  to pass filter
+#' @param traceendwday list of trace end DoW (at least one) to pass filter
+#' @param transitions list of event transitions (at least one) to pass filter
+#'
+#' @return filter object (hashmap)
 processfilter <- function(resources,
                           groups,
                           roles,
@@ -112,7 +124,7 @@ processfilter <- function(resources,
         type <- J("org.processmining.xestools.XEStools")$FilterType$TRACE_END_WEEKDAY_LIST
         filter$put(
             type,
-            J("com.google.common.collect.Lists")$newArrayList(.jarray(traceendtwday))
+            J("com.google.common.collect.Lists")$newArrayList(.jarray(traceendwday))
         )
     }
     if ( !is.null(transitions) ) {
