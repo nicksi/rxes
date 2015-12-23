@@ -35,7 +35,7 @@ createdf <- function(res) {
         .jcall(item, "I", "getEventRepetitions")
     }
     )
-    df <- J("java.time.format.DateTimeFormatter")$ofPattern("yyyy-MM-dd hh:mm:ss.z")
+    df <- J("java.time.format.DateTimeFormatter")$ofPattern("yyyy-MM-dd HH:mm:ss.z")
     ts <- sapply(valuesa, function(item) {
         ldt <- .jcall(item, "Ljava/time/ZonedDateTime;", "getStartTime");
         .jcall(ldt, "S", "format", df)
@@ -70,20 +70,22 @@ createdf <- function(res) {
 #' @param traceend range of trace end dates to pass filter
 #' @param eventnames list of events trace should contain (at least one) to pass filter
 #' @param tracestartwday list of trace start DoW (at least one)  to pass filter
-#' @param traceendwday list of trace end DoW (at least one) to pass filter
-#' @param transitions list of event transitions (at least one) to pass filter
+#' @param traceendwday list of trace end DoW (at least one)  to pass filter#'
+#' @param transitions list of event transitions statuses to pass filter
+#' @param tracenames list of trace names to pass filter
 #'
 #' @return filter object (hashmap)
-processfilter <- function(resources,
-                          groups,
-                          roles,
-                          eventcount,
-                          tracestart,
-                          traceend,
-                          eventnames,
-                          tracestartwday,
-                          traceendwday,
-                          transitions) {
+xes.processfilter <- function(resources = NULL,
+                          groups = NULL,
+                          roles = NULL,
+                          eventcount = NULL,
+                          tracestart = NULL,
+                          traceend = NULL,
+                          eventnames = NULL,
+                          tracestartwday = NULL,
+                          traceendwday = NULL,
+                          transitions = NULL,
+                          tracenames = NULL ) {
     filter <- .jnew('java.util.HashMap')
     if ( !is.null(resources) ) {
         type <- J("org.processmining.xestools.XEStools")$FilterType$RESOURCE_LIST
@@ -132,6 +134,13 @@ processfilter <- function(resources,
         filter$put(
             type,
             J("com.google.common.collect.Lists")$newArrayList(.jarray(transitions))
+        )
+    }
+    if ( !is.null(tracenames) ) {
+        type <- J("org.processmining.xestools.XEStools")$FilterType$TRACE_NAME_LIST
+        filter$put(
+            type,
+            J("com.google.common.collect.Lists")$newArrayList(.jarray(tracenames))
         )
     }
     if (!is.null(eventcount)) {

@@ -4,10 +4,7 @@
 \alias{xes.getFullSubTraceList}
 \title{Return list of all trace segments limited by event names with attributes}
 \usage{
-xes.getFullSubTraceList(xes, start_event, end_event, resources = NULL,
-  groups = NULL, roles = NULL, eventcount = NULL, tracestart = NULL,
-  traceend = NULL, eventnames = NULL, tracestartwday = NULL,
-  traceendwday = NULL, transitions = NULL)
+xes.getFullSubTraceList(xes, start_event, end_event, ...)
 }
 \arguments{
 \item{xes}{reference to xes class object created via \code{\link{xes.init}}}
@@ -15,26 +12,6 @@ xes.getFullSubTraceList(xes, start_event, end_event, resources = NULL,
 \item{start_event}{name of first event in trace segment}
 
 \item{end_event}{name of last event in trace segment}
-
-\item{resources}{list of resources present in trace's event to pass filter. MULTI for multiple resources per trace}
-
-\item{groups}{list of resources present in trace's event to pass filter. MULTI for multiple groups per trace}
-
-\item{roles}{list of resources present in trace's event to pass filter. MULTI for multiple roles per trace}
-
-\item{eventcount}{range of events per trace to pass filter}
-
-\item{tracestart}{range of trace start dates to pass filter}
-
-\item{traceend}{range of trace end dates to pass filter}
-
-\item{eventnames}{list of events trace should contain (at least one) to pass filter}
-
-\item{tracestartwday}{list of trace start DoW (at least one)  to pass filter}
-
-\item{traceendwday}{list of trace end DoW (at least one) to pass filter}
-
-\item{transitions}{list of event transitions (at least one) to pass filter}
 }
 \value{
 data.frame with traces
