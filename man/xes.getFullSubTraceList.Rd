@@ -12,6 +12,8 @@ xes.getFullSubTraceList(xes, start_event, end_event, ...)
 \item{start_event}{name of first event in trace segment}
 
 \item{end_event}{name of last event in trace segment}
+
+\item{...}{parameters to be passed to filter creation function \code{\link{xes.processfilter}}}
 }
 \value{
 data.frame with traces

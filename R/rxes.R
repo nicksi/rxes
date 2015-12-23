@@ -63,7 +63,7 @@ xes.getTraceDurations <- function(xes) {
 #' @param xes reference to xes class object created via \code{\link{xes.init}}
 #' @param start_event name of first event in trace segment
 #' @param end_event name of last event in trace segment
-#' @inheritParams xes.processfilter
+#' @param ... parameters to be passed to filter creation function \code{\link{xes.processfilter}}
 #' @return data.frame with traces
 xes.getFullSubTraceList <- function(xes, start_event, end_event, ... ) {
     checkxes(xes)
@@ -81,7 +81,7 @@ xes.getFullSubTraceList <- function(xes, start_event, end_event, ... ) {
 #' Return list of all traces with attributes
 #'
 #' @param xes reference to xes class object created via \code{\link{xes.init}}
-#' @inheritParams xes.processfilter
+#' @param ... parameters to be passed to filter creation function \code{\link{xes.processfilter}}
 #' @return data.frame with traces
 xes.getFullTraceList <- function(xes, ...) {
     checkxes(xes)
@@ -100,7 +100,7 @@ xes.getFullTraceList <- function(xes, ...) {
 #'
 #' @param xes reference to xes class object created via \code{\link{xes.init}}
 #' @param median if true, use median instead of mean
-#' @inheritParams xes.processfilter
+#' @param ... parameters to be passed to filter creation function \code{\link{xes.processfilter}}
 #' @return data.frame with event shares
 xes.getEventShare <- function(xes, median = FALSE,...) {
     checkxes(xes)
@@ -126,7 +126,7 @@ xes.getEventShare <- function(xes, median = FALSE,...) {
 #' doing events from event log
 #'
 #' @param xes reference to xes class object created via \code{\link{xes.init}}
-#' @inheritParams xes.processfilter
+#' @param ... parameters to be passed to filter creation function \code{\link{xes.processfilter}}
 #' @return data.frame with workloads
 xes.getWorkload <- function(xes,...) {
     checkxes(xes)
@@ -170,7 +170,7 @@ xes.getWorkload <- function(xes,...) {
 #' Retreive event list form traces matching filter
 #'
 #' @param xes reference to xes class object created via \code{\link{xes.init}}
-#' @param ... parameters to be passed to filter creation function \code{\link{xes.xes.processfilter}}
+#' @param ... parameters to be passed to filter creation function \code{\link{xes.processfilter}}
 #' @return list of events
 xes.getEventList <- function(xes, ...){
     checkxes(xes)

@@ -8,6 +8,8 @@ xes.getFullTraceList(xes, ...)
 }
 \arguments{
 \item{xes}{reference to xes class object created via \code{\link{xes.init}}}
+
+\item{...}{parameters to be passed to filter creation function \code{\link{xes.processfilter}}}
 }
 \value{
 data.frame with traces
